@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ViewfinderView">
+        <attr name="animationDelay" format="integer|reference" />
+        <attr name="currentPointOpacity" format="integer|reference" />
+        <attr name="possiblePointNum" format="integer|reference" />
+        <attr name="maxResultPoints" format="integer|reference" />
+        <attr name="possiblePointSize" format="integer|reference" />
+        <attr name="maskColor" format="color|reference" />
+        <attr name="laserStyle">
+            <flag name="paint" value="0x0" />
+            <flag name="bitmap" value="0x1" />
+        </attr>
+        <attr name="laserColor" format="color|reference" />
+        <attr name="resultPointColor" format="color|reference" />
+        <attr name="cornerLength" format="dimension|reference" />
+        <attr name="cornerThickness" format="dimension|reference" />
+        <attr name="scanningDistance" format="integer|reference" />
+        <attr name="laserHeight" format="dimension|reference" />
+        <attr name="tipText" format="string|reference" />
+        <attr name="tipTextAlpha" format="integer|reference" />
+        <attr name="tipTextColor" format="color|reference" />
+        <attr name="tipTextSize" format="dimension|reference" />
+        <attr name="tipTextPaddingTop" format="dimension|reference" />
+    </declare-styleable>
+</resources>
