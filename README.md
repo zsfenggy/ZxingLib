@@ -1,2 +1,2 @@
-# beam
-MVP Development frame
+# ZxingLib
+A Simple Library for Zxing.
