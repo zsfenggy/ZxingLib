@@ -16,30 +16,25 @@
 
 package com.google.zxing.client.android.encode;
 
-import android.graphics.Point;
-import android.view.Display;
-import android.view.MenuInflater;
-import android.view.View;
-import android.view.WindowManager;
-
-import com.google.zxing.WriterException;
-import com.google.zxing.client.android.FinishListener;
-import com.google.zxing.client.android.R;
-import com.google.zxing.client.android.util.Contents;
-import com.google.zxing.client.android.util.Intents;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.Display;
+import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.google.zxing.WriterException;
+import com.google.zxing.client.android.FinishListener;
+import com.google.zxing.client.android.R;
+import com.google.zxing.client.android.util.Intents;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -149,6 +144,14 @@ public final class EncodeActivity extends Activity {
         startActivity(Intent.createChooser(intent, null));
     }
 
+    private void showErrorMessage(int message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(message);
+        builder.setPositiveButton(R.string.button_ok, new FinishListener(this));
+        builder.setOnCancelListener(new FinishListener(this));
+        builder.show();
+    }
+
     private static CharSequence makeBarcodeFileName(CharSequence contents) {
         String fileName = NOT_ALPHANUMERIC.matcher(contents).replaceAll("_");
         if (fileName.length() > MAX_BARCODE_FILENAME_LENGTH) {
@@ -202,14 +205,6 @@ public final class EncodeActivity extends Activity {
             showErrorMessage(R.string.msg_encode_contents_failed);
             qrCodeEncoder = null;
         }
-    }
-
-    private void showErrorMessage(int message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setMessage(message);
-        builder.setPositiveButton(R.string.button_ok, new FinishListener(this));
-        builder.setOnCancelListener(new FinishListener(this));
-        builder.show();
     }
 
 }

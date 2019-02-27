@@ -17,10 +17,8 @@
 package com.google.zxing.client.android.camera;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.hardware.Camera;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Display;
 import android.view.Surface;
@@ -38,7 +36,7 @@ final class CameraConfigurationManager {
     private static final String TAG = "CameraConfiguration";
 
     private static final boolean AUTO_FOCUS = true;
-    private static final boolean DISABLE_CONTINUOUS_FOCUS = true;
+    private static final boolean DISABLE_CONTINUOUS_FOCUS = false;
     private static final boolean INVERT_SCAN = false;
 
     private static final boolean DISABLE_BARCODE_SCENE_MODE = true;
@@ -146,8 +144,6 @@ final class CameraConfigurationManager {
             Log.w(TAG, "In camera config safe mode -- most settings will not be honored");
         }
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
         initializeTorch(parameters, frontLightMode, safeMode);
 
         CameraConfigurationUtils.setFocus(
@@ -189,6 +185,18 @@ final class CameraConfigurationManager {
         }
     }
 
+    private void initializeTorch(Camera.Parameters parameters, FrontLightMode frontLightMode, boolean safeMode) {
+        boolean currentSetting = frontLightMode == FrontLightMode.ON;
+        doSetTorch(parameters, currentSetting, safeMode);
+    }
+
+    private void doSetTorch(Camera.Parameters parameters, boolean newSetting, boolean safeMode) {
+        CameraConfigurationUtils.setTorch(parameters, newSetting);
+        if (!safeMode && !DISABLE_EXPOSURE) {
+            CameraConfigurationUtils.setBestExposure(parameters, newSetting);
+        }
+    }
+
     Point getBestPreviewSize() {
         return bestPreviewSize;
     }
@@ -214,9 +222,8 @@ final class CameraConfigurationManager {
             Camera.Parameters parameters = camera.getParameters();
             if (parameters != null) {
                 String flashMode = parameters.getFlashMode();
-                return flashMode != null &&
-                        (Camera.Parameters.FLASH_MODE_ON.equals(flashMode) ||
-                                Camera.Parameters.FLASH_MODE_TORCH.equals(flashMode));
+                return Camera.Parameters.FLASH_MODE_ON.equals(flashMode) ||
+                        Camera.Parameters.FLASH_MODE_TORCH.equals(flashMode);
             }
         }
         return false;
@@ -226,18 +233,6 @@ final class CameraConfigurationManager {
         Camera.Parameters parameters = camera.getParameters();
         doSetTorch(parameters, newSetting, false);
         camera.setParameters(parameters);
-    }
-
-    private void initializeTorch(Camera.Parameters parameters, FrontLightMode frontLightMode, boolean safeMode) {
-        boolean currentSetting = frontLightMode == FrontLightMode.ON;
-        doSetTorch(parameters, currentSetting, safeMode);
-    }
-
-    private void doSetTorch(Camera.Parameters parameters, boolean newSetting, boolean safeMode) {
-        CameraConfigurationUtils.setTorch(parameters, newSetting);
-        if (!safeMode && !DISABLE_EXPOSURE) {
-            CameraConfigurationUtils.setBestExposure(parameters, newSetting);
-        }
     }
 
 }

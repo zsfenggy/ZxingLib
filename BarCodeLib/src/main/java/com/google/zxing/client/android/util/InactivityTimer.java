@@ -25,6 +25,8 @@ import android.os.AsyncTask;
 import android.os.BatteryManager;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
+
 /**
  * Finishes an activity after a period of inactivity if the device is on battery power.
  */
@@ -48,8 +50,16 @@ public final class InactivityTimer {
 
     public synchronized void onActivity() {
         cancel();
-        inactivityTask = new InactivityAsyncTask();
+        inactivityTask = new InactivityAsyncTask(this);
         inactivityTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+    private synchronized void cancel() {
+        AsyncTask<?, ?, ?> task = inactivityTask;
+        if (task != null) {
+            task.cancel(true);
+            inactivityTask = null;
+        }
     }
 
     public synchronized void onPause() {
@@ -72,16 +82,30 @@ public final class InactivityTimer {
         onActivity();
     }
 
-    private synchronized void cancel() {
-        AsyncTask<?, ?, ?> task = inactivityTask;
-        if (task != null) {
-            task.cancel(true);
-            inactivityTask = null;
-        }
-    }
-
     public void shutdown() {
         cancel();
+    }
+
+    private static class InactivityAsyncTask extends AsyncTask<Object, Object, Object> {
+
+        private InactivityTimer theInstance;
+
+        private InactivityAsyncTask(InactivityTimer instance) {
+            WeakReference<InactivityTimer> weakReference = new WeakReference<>(instance);
+            theInstance = weakReference.get();
+        }
+
+        @Override
+        protected Object doInBackground(Object... objects) {
+            try {
+                Thread.sleep(INACTIVITY_DELAY_MS);
+                Log.i(TAG, "Finishing activity due to inactivity");
+                theInstance.activity.finish();
+            } catch (InterruptedException e) {
+                // continue without killing
+            }
+            return null;
+        }
     }
 
     private final class PowerStatusReceiver extends BroadcastReceiver {
@@ -96,20 +120,6 @@ public final class InactivityTimer {
                     InactivityTimer.this.cancel();
                 }
             }
-        }
-    }
-
-    private final class InactivityAsyncTask extends AsyncTask<Object, Object, Object> {
-        @Override
-        protected Object doInBackground(Object... objects) {
-            try {
-                Thread.sleep(INACTIVITY_DELAY_MS);
-                Log.i(TAG, "Finishing activity due to inactivity");
-                activity.finish();
-            } catch (InterruptedException e) {
-                // continue without killing
-            }
-            return null;
         }
     }
 

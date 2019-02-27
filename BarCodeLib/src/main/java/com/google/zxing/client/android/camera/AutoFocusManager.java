@@ -16,11 +16,11 @@
 
 package com.google.zxing.client.android.camera;
 
-import android.content.Context;
 import android.hardware.Camera;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.RejectedExecutionException;
@@ -38,36 +38,18 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
         FOCUS_MODES_CALLING_AF.add(Camera.Parameters.FOCUS_MODE_MACRO);
     }
 
-    private boolean stopped;
-    private boolean focusing;
     private final boolean useAutoFocus;
     private final Camera camera;
+    private boolean stopped;
+    private boolean focusing;
     private AsyncTask<?, ?, ?> outstandingTask;
 
-    AutoFocusManager(Context context, Camera camera) {
+    AutoFocusManager(Camera camera) {
         this.camera = camera;
         String currentFocusMode = camera.getParameters().getFocusMode();
         useAutoFocus = FOCUS_MODES_CALLING_AF.contains(currentFocusMode);
         Log.i(TAG, "Current focus mode '" + currentFocusMode + "'; use auto focus? " + useAutoFocus);
         start();
-    }
-
-    @Override
-    public synchronized void onAutoFocus(boolean success, Camera theCamera) {
-        focusing = false;
-        autoFocusAgainLater();
-    }
-
-    private synchronized void autoFocusAgainLater() {
-        if (!stopped && outstandingTask == null) {
-            AutoFocusTask newTask = new AutoFocusTask();
-            try {
-                newTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-                outstandingTask = newTask;
-            } catch (RejectedExecutionException ree) {
-                Log.w(TAG, "Could not request auto focus", ree);
-            }
-        }
     }
 
     synchronized void start() {
@@ -87,13 +69,22 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
         }
     }
 
-    private synchronized void cancelOutstandingTask() {
-        if (outstandingTask != null) {
-            if (outstandingTask.getStatus() != AsyncTask.Status.FINISHED) {
-                outstandingTask.cancel(true);
+    private synchronized void autoFocusAgainLater() {
+        if (!stopped && outstandingTask == null) {
+            AutoFocusTask newTask = new AutoFocusTask(this);
+            try {
+                newTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                outstandingTask = newTask;
+            } catch (RejectedExecutionException ree) {
+                Log.w(TAG, "Could not request auto focus", ree);
             }
-            outstandingTask = null;
         }
+    }
+
+    @Override
+    public synchronized void onAutoFocus(boolean success, Camera theCamera) {
+        focusing = false;
+        autoFocusAgainLater();
     }
 
     synchronized void stop() {
@@ -110,7 +101,24 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
         }
     }
 
-    private final class AutoFocusTask extends AsyncTask<Object, Object, Object> {
+    private synchronized void cancelOutstandingTask() {
+        if (outstandingTask != null) {
+            if (outstandingTask.getStatus() != AsyncTask.Status.FINISHED) {
+                outstandingTask.cancel(true);
+            }
+            outstandingTask = null;
+        }
+    }
+
+    private static class AutoFocusTask extends AsyncTask<Object, Object, Object> {
+
+        private AutoFocusManager theInstance;
+
+        AutoFocusTask(AutoFocusManager instance) {
+            WeakReference<AutoFocusManager> weakReference = new WeakReference<>(instance);
+            theInstance = weakReference.get();
+        }
+
         @Override
         protected Object doInBackground(Object... voids) {
             try {
@@ -118,7 +126,7 @@ final class AutoFocusManager implements Camera.AutoFocusCallback {
             } catch (InterruptedException e) {
                 // continue
             }
-            start();
+            theInstance.start();
             return null;
         }
     }

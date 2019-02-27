@@ -44,6 +44,7 @@ import com.google.zxing.client.android.camera.FrontLightMode;
 import com.google.zxing.client.android.util.AmbientLightManager;
 import com.google.zxing.client.android.util.BeepManager;
 import com.google.zxing.client.android.util.InactivityTimer;
+import com.google.zxing.client.android.view.ViewfinderView;
 
 import java.io.IOException;
 import java.util.Collection;

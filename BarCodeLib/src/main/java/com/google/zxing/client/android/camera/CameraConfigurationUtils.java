@@ -55,10 +55,8 @@ public final class CameraConfigurationUtils {
     private CameraConfigurationUtils() {
     }
 
-    public static void setFocus(Camera.Parameters parameters,
-                                boolean autoFocus,
-                                boolean disableContinuous,
-                                boolean safeMode) {
+    static void setFocus(Camera.Parameters parameters, boolean autoFocus, boolean disableContinuous,
+                         boolean safeMode) {
         List<String> supportedFocusModes = parameters.getSupportedFocusModes();
         String focusMode = null;
         if (autoFocus) {
@@ -90,7 +88,24 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static void setTorch(Camera.Parameters parameters, boolean on) {
+    private static String findSettableValue(String name,
+                                            Collection<String> supportedValues,
+                                            String... desiredValues) {
+        Log.i(TAG, "Requesting " + name + " value from among: " + Arrays.toString(desiredValues));
+        Log.i(TAG, "Supported " + name + " values: " + supportedValues);
+        if (supportedValues != null) {
+            for (String desiredValue : desiredValues) {
+                if (supportedValues.contains(desiredValue)) {
+                    Log.i(TAG, "Can set " + name + " to: " + desiredValue);
+                    return desiredValue;
+                }
+            }
+        }
+        Log.i(TAG, "No supported values match");
+        return null;
+    }
+
+    static void setTorch(Camera.Parameters parameters, boolean on) {
         List<String> supportedFlashModes = parameters.getSupportedFlashModes();
         String flashMode;
         if (on) {
@@ -113,7 +128,7 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static void setBestExposure(Camera.Parameters parameters, boolean lightOn) {
+    static void setBestExposure(Camera.Parameters parameters, boolean lightOn) {
         int minExposure = parameters.getMinExposureCompensation();
         int maxExposure = parameters.getMaxExposureCompensation();
         float step = parameters.getExposureCompensationStep();
@@ -135,11 +150,11 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static void setBestPreviewFPS(Camera.Parameters parameters) {
+    static void setBestPreviewFPS(Camera.Parameters parameters) {
         setBestPreviewFPS(parameters, MIN_FPS, MAX_FPS);
     }
 
-    public static void setBestPreviewFPS(Camera.Parameters parameters, int minFPS, int maxFPS) {
+    private static void setBestPreviewFPS(Camera.Parameters parameters, int minFPS, int maxFPS) {
         List<int[]> supportedPreviewFpsRanges = parameters.getSupportedPreviewFpsRange();
         Log.i(TAG, "Supported FPS ranges: " + toString(supportedPreviewFpsRanges));
         if (supportedPreviewFpsRanges != null && !supportedPreviewFpsRanges.isEmpty()) {
@@ -168,7 +183,24 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static void setFocusArea(Camera.Parameters parameters) {
+    private static String toString(Collection<int[]> arrays) {
+        if (arrays == null || arrays.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder buffer = new StringBuilder();
+        buffer.append('[');
+        Iterator<int[]> it = arrays.iterator();
+        while (it.hasNext()) {
+            buffer.append(Arrays.toString(it.next()));
+            if (it.hasNext()) {
+                buffer.append(", ");
+            }
+        }
+        buffer.append(']');
+        return buffer.toString();
+    }
+
+    static void setFocusArea(Camera.Parameters parameters) {
         if (parameters.getMaxNumFocusAreas() > 0) {
             Log.i(TAG, "Old focus areas: " + toString(parameters.getFocusAreas()));
             List<Camera.Area> middleArea = buildMiddleArea(AREA_PER_1000);
@@ -179,7 +211,23 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static void setMetering(Camera.Parameters parameters) {
+    private static String toString(Iterable<Camera.Area> areas) {
+        if (areas == null) {
+            return null;
+        }
+        StringBuilder result = new StringBuilder();
+        for (Camera.Area area : areas) {
+            result.append(area.rect).append(':').append(area.weight).append(' ');
+        }
+        return result.toString();
+    }
+
+    private static List<Camera.Area> buildMiddleArea(int areaPer1000) {
+        return Collections.singletonList(
+                new Camera.Area(new Rect(-areaPer1000, -areaPer1000, areaPer1000, areaPer1000), 1));
+    }
+
+    static void setMetering(Camera.Parameters parameters) {
         if (parameters.getMaxNumMeteringAreas() > 0) {
             Log.i(TAG, "Old metering areas: " + parameters.getMeteringAreas());
             List<Camera.Area> middleArea = buildMiddleArea(AREA_PER_1000);
@@ -190,12 +238,7 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    private static List<Camera.Area> buildMiddleArea(int areaPer1000) {
-        return Collections.singletonList(
-                new Camera.Area(new Rect(-areaPer1000, -areaPer1000, areaPer1000, areaPer1000), 1));
-    }
-
-    public static void setVideoStabilization(Camera.Parameters parameters) {
+    static void setVideoStabilization(Camera.Parameters parameters) {
         if (parameters.isVideoStabilizationSupported()) {
             if (parameters.getVideoStabilization()) {
                 Log.i(TAG, "Video stabilization already enabled");
@@ -208,7 +251,7 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static void setBarcodeSceneMode(Camera.Parameters parameters) {
+    static void setBarcodeSceneMode(Camera.Parameters parameters) {
         if (Camera.Parameters.SCENE_MODE_BARCODE.equals(parameters.getSceneMode())) {
             Log.i(TAG, "Barcode scene mode already set");
             return;
@@ -260,7 +303,7 @@ public final class CameraConfigurationUtils {
         return closestIndex;
     }
 
-    public static void setInvertColor(Camera.Parameters parameters) {
+    static void setInvertColor(Camera.Parameters parameters) {
         if (Camera.Parameters.EFFECT_NEGATIVE.equals(parameters.getColorEffect())) {
             Log.i(TAG, "Negative effect already set");
             return;
@@ -273,7 +316,7 @@ public final class CameraConfigurationUtils {
         }
     }
 
-    public static Point findBestPreviewSizeValue(Camera.Parameters parameters, Point screenResolution) {
+    static Point findBestPreviewSizeValue(Camera.Parameters parameters, Point screenResolution) {
 
         List<Camera.Size> rawSupportedSizes = parameters.getSupportedPreviewSizes();
         if (rawSupportedSizes == null) {
@@ -361,56 +404,11 @@ public final class CameraConfigurationUtils {
         return defaultSize;
     }
 
-    private static String findSettableValue(String name,
-                                            Collection<String> supportedValues,
-                                            String... desiredValues) {
-        Log.i(TAG, "Requesting " + name + " value from among: " + Arrays.toString(desiredValues));
-        Log.i(TAG, "Supported " + name + " values: " + supportedValues);
-        if (supportedValues != null) {
-            for (String desiredValue : desiredValues) {
-                if (supportedValues.contains(desiredValue)) {
-                    Log.i(TAG, "Can set " + name + " to: " + desiredValue);
-                    return desiredValue;
-                }
-            }
-        }
-        Log.i(TAG, "No supported values match");
-        return null;
-    }
-
-    private static String toString(Collection<int[]> arrays) {
-        if (arrays == null || arrays.isEmpty()) {
-            return "[]";
-        }
-        StringBuilder buffer = new StringBuilder();
-        buffer.append('[');
-        Iterator<int[]> it = arrays.iterator();
-        while (it.hasNext()) {
-            buffer.append(Arrays.toString(it.next()));
-            if (it.hasNext()) {
-                buffer.append(", ");
-            }
-        }
-        buffer.append(']');
-        return buffer.toString();
-    }
-
-    private static String toString(Iterable<Camera.Area> areas) {
-        if (areas == null) {
-            return null;
-        }
-        StringBuilder result = new StringBuilder();
-        for (Camera.Area area : areas) {
-            result.append(area.rect).append(':').append(area.weight).append(' ');
-        }
-        return result.toString();
-    }
-
-    public static String collectStats(Camera.Parameters parameters) {
+    static String collectStats(Camera.Parameters parameters) {
         return collectStats(parameters.flatten());
     }
 
-    public static String collectStats(CharSequence flattenedParams) {
+    static String collectStats(CharSequence flattenedParams) {
         StringBuilder result = new StringBuilder(1000);
 
         result.append("BOARD=").append(Build.BOARD).append('\n');

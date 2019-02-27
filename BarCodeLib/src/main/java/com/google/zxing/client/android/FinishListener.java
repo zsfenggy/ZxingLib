@@ -37,13 +37,13 @@ public final class FinishListener implements DialogInterface.OnClickListener, Di
         run();
     }
 
+    private void run() {
+        activityToFinish.finish();
+    }
+
     @Override
     public void onClick(DialogInterface dialogInterface, int i) {
         run();
-    }
-
-    private void run() {
-        activityToFinish.finish();
     }
 
 }

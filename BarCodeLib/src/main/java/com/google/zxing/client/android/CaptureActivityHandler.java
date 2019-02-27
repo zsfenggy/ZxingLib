@@ -27,6 +27,7 @@ import com.google.zxing.DecodeHintType;
 import com.google.zxing.Result;
 import com.google.zxing.client.android.camera.CameraManager;
 import com.google.zxing.client.android.decode.DecodeThread;
+import com.google.zxing.client.android.view.ViewfinderResultPointCallback;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -51,14 +52,8 @@ public final class CaptureActivityHandler extends Handler {
 
     private final CaptureActivity activity;
     private final DecodeThread decodeThread;
-    private State state;
     private final CameraManager cameraManager;
-
-    private enum State {
-        PREVIEW,
-        SUCCESS,
-        DONE
-    }
+    private State state;
 
     CaptureActivityHandler(CaptureActivity activity,
                            Collection<BarcodeFormat> decodeFormats,
@@ -75,6 +70,14 @@ public final class CaptureActivityHandler extends Handler {
         this.cameraManager = cameraManager;
         cameraManager.startPreview();
         restartPreviewAndDecode();
+    }
+
+    private void restartPreviewAndDecode() {
+        if (state == State.SUCCESS) {
+            state = State.PREVIEW;
+            cameraManager.requestPreviewFrame(decodeThread.getHandler(), R.id.decode);
+            activity.drawViewfinder();
+        }
     }
 
     @Override
@@ -133,7 +136,7 @@ public final class CaptureActivityHandler extends Handler {
         }
     }
 
-    public void quitSynchronously() {
+    void quitSynchronously() {
         state = State.DONE;
         cameraManager.stopPreview();
         Message quit = Message.obtain(decodeThread.getHandler(), R.id.quit);
@@ -150,12 +153,10 @@ public final class CaptureActivityHandler extends Handler {
         removeMessages(R.id.decode_failed);
     }
 
-    private void restartPreviewAndDecode() {
-        if (state == State.SUCCESS) {
-            state = State.PREVIEW;
-            cameraManager.requestPreviewFrame(decodeThread.getHandler(), R.id.decode);
-            activity.drawViewfinder();
-        }
+    private enum State {
+        PREVIEW,
+        SUCCESS,
+        DONE
     }
 
 }
