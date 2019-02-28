@@ -16,12 +16,13 @@
 <resources>
     <dimen name="standard_padding">8dip</dimen>
     <dimen name="half_padding">4dip</dimen>
+    <dimen name="standard_margin">8dip</dimen>
 
     <dimen name="possible_point_size">3dp</dimen>
-    <dimen name="corner_length">16.0dp</dimen>
-    <dimen name="corner_thickness">4.0dp</dimen>
-    <dimen name="scanning_distance">3dp</dimen>
+    <dimen name="corner_length">16dp</dimen>
+    <dimen name="corner_thickness">4dp</dimen>
+    <dimen name="scanning_distance">6dp</dimen>
     <dimen name="laser_height">2dp</dimen>
-    <dimen name="tip_text_size">16.0sp</dimen>
-    <dimen name="tip_text_padding_top">24.0dp</dimen>
+    <dimen name="tip_text_size">16sp</dimen>
+    <dimen name="tip_text_margin_top">18dp</dimen>
 </resources>

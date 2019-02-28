@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <integer name="animation_delay">80</integer>
+    <integer name="animation_delay">60</integer>
     <integer name="current_point_opacity">160</integer>
     <integer name="possible_point_num">5</integer>
     <integer name="max_result_points">20</integer>

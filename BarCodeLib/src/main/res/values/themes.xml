@@ -22,12 +22,4 @@
         <item name="android:windowActionBarOverlay">true</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
-
-    <style name="ScanTheme" parent="android:Theme.Light.NoTitleBar.Fullscreen">
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowFullscreen">true</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowActionBarOverlay">true</item>
-        <item name="android:windowActionModeOverlay">true</item>
-    </style>
 </resources>

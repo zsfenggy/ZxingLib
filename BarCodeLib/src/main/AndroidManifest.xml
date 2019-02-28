@@ -20,7 +20,6 @@
         <activity
             android:name=".CaptureActivity"
             android:clearTaskOnLaunch="true"
-            android:screenOrientation="sensorLandscape"
             android:stateNotNeeded="true"
             android:theme="@style/CaptureTheme"
             android:windowSoftInputMode="stateAlwaysHidden">
@@ -49,10 +48,6 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ScanActivity"
-            android:screenOrientation="landscape"
-            android:theme="@style/ScanTheme" />
     </application>
 
 </manifest>

@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">條碼掃描庫</string>
+    <string name="scan">掃描</string>
+</resources>

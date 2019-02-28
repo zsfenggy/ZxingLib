@@ -12,7 +12,7 @@
         android:id="@android:id/summary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
+        android:layout_above="@+id/invisibleView"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
         android:layout_marginLeft="@dimen/activity_horizontal_margin"
         android:layout_marginEnd="@dimen/activity_horizontal_margin"
@@ -24,14 +24,22 @@
         android:text="Hello World!"
         android:textAppearance="@android:style/TextAppearance.Medium" />
 
+    <View
+        android:id="@+id/invisibleView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_centerInParent="true"
+        android:visibility="invisible" />
+
     <Button
         android:id="@android:id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@android:id/summary"
+        android:layout_below="@id/invisibleView"
         android:layout_centerInParent="true"
         android:layout_marginTop="@dimen/activity_vertical_margin"
-        android:minEms="6"
-        android:text="@android:string/ok"
+        android:minEms="8"
+        android:minLines="2"
+        android:text="@string/scan"
         android:textAppearance="@android:style/TextAppearance.Medium" />
 </RelativeLayout>

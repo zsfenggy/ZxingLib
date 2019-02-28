@@ -23,7 +23,7 @@
     <string name="contents_sms">短信号码</string>
     <string name="contents_text">纯文本</string>
     <string name="msg_camera_framework_bug">很遗憾，Android 相机出现问题。你可能需要重启设备。</string>
-    <string name="msg_default_status">请将条码置于取景框内扫描。  </string>
+    <string name="msg_default_status">请将条码/二维码置于取景框内扫描。</string>
     <string name="msg_encode_contents_failed">无法生成条码。</string>
     <string name="msg_invalid_value">值无效</string>
     <string name="msg_unmount_usb">抱歉，无法访问 SD 卡。</string>

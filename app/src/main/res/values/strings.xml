@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ZxingLib</string>
+    <string name="scan">Scan</string>
 </resources>

@@ -21,6 +21,6 @@
         <attr name="tipTextAlpha" format="integer|reference" />
         <attr name="tipTextColor" format="color|reference" />
         <attr name="tipTextSize" format="dimension|reference" />
-        <attr name="tipTextPaddingTop" format="dimension|reference" />
+        <attr name="tipTextMarginTop" format="dimension|reference" />
     </declare-styleable>
 </resources>

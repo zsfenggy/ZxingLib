@@ -78,6 +78,17 @@ final class DecodeHandler extends Handler {
      */
     private void decode(byte[] data, int width, int height) {
         long start = System.nanoTime();
+        // add by stefan
+        if (width < height) {
+            // portrait
+            byte[] rotatedData = new byte[data.length];
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++)
+                    rotatedData[y * width + width - x - 1] = data[y + x * height];
+            }
+            data = rotatedData;
+        }
+        // add end
         Result rawResult = null;
         PlanarYUVLuminanceSource source = activity.getCameraManager().buildLuminanceSource(data, width, height);
         if (source != null) {

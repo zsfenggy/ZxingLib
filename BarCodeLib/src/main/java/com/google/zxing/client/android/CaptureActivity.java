@@ -18,6 +18,8 @@ package com.google.zxing.client.android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -28,6 +30,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -58,9 +61,10 @@ import java.util.Collection;
  * @author Sean Owen
  */
 public class CaptureActivity extends Activity implements SurfaceHolder.Callback {
+    public static final String EXTRA_SCAN_RESULT = "scan_result";
 
     private static final String TAG = CaptureActivity.class.getSimpleName();
-
+    private static final boolean DISABLE_AUTO_ORIENTATION = true;
     private CameraManager cameraManager;
     private CaptureActivityHandler handler;
     private Result savedResultToShow;
@@ -72,8 +76,7 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
     private InactivityTimer inactivityTimer;
     private BeepManager beepManager;
     private AmbientLightManager ambientLightManager;
-
-    private static final boolean DISABLE_AUTO_ORIENTATION = true;
+    private MyOrientationDetector myOrientationDetector;
 
     ViewfinderView getViewfinderView() {
         return viewfinderView;
@@ -99,6 +102,11 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
         inactivityTimer = new InactivityTimer(this);
         beepManager = new BeepManager(this);
         ambientLightManager = new AmbientLightManager(this);
+
+        // add by stefan
+        myOrientationDetector = new MyOrientationDetector(this);
+        myOrientationDetector.setLastOrientation(getWindowManager().getDefaultDisplay().getRotation());
+        // end add
     }
 
     @SuppressWarnings("all")
@@ -122,7 +130,8 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
         if (DISABLE_AUTO_ORIENTATION) {
             setRequestedOrientation(getCurrentOrientation());
         } else {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR); // rotation
+            myOrientationDetector.enable(); // enable detector
         }
 
         resetStatusView();
@@ -169,153 +178,10 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
         }
     }
 
-    @Override
-    protected void onPause() {
-        if (handler != null) {
-            handler.quitSynchronously();
-            handler = null;
-        }
-        inactivityTimer.onPause();
-        ambientLightManager.stop();
-        beepManager.close();
-        cameraManager.closeDriver();
-        if (!hasSurface) {
-            SurfaceView surfaceView = (SurfaceView) findViewById(R.id.preview_view);
-            SurfaceHolder surfaceHolder = surfaceView.getHolder();
-            surfaceHolder.removeCallback(this);
-        }
-        super.onPause();
-    }
-
-    @Override
-    protected void onDestroy() {
-        inactivityTimer.shutdown();
-        super.onDestroy();
-    }
-
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_BACK:
-                setResult(RESULT_CANCELED);
-                finish();
-                break;
-            case KeyEvent.KEYCODE_FOCUS:
-            case KeyEvent.KEYCODE_CAMERA:
-                // Handle these events so they don't launch the Camera app
-                return true;
-            // Use volume up/down to turn on light
-            case KeyEvent.KEYCODE_VOLUME_DOWN:
-                cameraManager.setTorch(false);
-                return true;
-            case KeyEvent.KEYCODE_VOLUME_UP:
-                cameraManager.setTorch(true);
-                return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
-
-    private void decodeOrStoreSavedBitmap(Result result) {
-        // Bitmap isn't used yet -- will be used soon
-        if (handler == null) {
-            savedResultToShow = result;
-        } else {
-            if (result != null) {
-                savedResultToShow = result;
-            }
-            if (savedResultToShow != null) {
-                Message message = Message.obtain(handler, R.id.decode_succeeded, savedResultToShow);
-                handler.sendMessage(message);
-            }
-            savedResultToShow = null;
-        }
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        if (holder == null) {
-            Log.e(TAG, "*** WARNING *** surfaceCreated() gave us a null surface!");
-        }
-        if (!hasSurface) {
-            hasSurface = true;
-            initCamera(holder);
-        }
-    }
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        hasSurface = false;
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
-    }
-
-    /**
-     * A valid barcode has been found, so give an indication of success and show the results.
-     *
-     * @param rawResult   The contents of the barcode.
-     * @param scaleFactor amount by which thumbnail was scaled
-     * @param barcode     A greyscale bitmap of the camera data which was decoded.
-     */
-    public void handleDecode(Result rawResult, Bitmap barcode, float scaleFactor) {
-        inactivityTimer.onActivity();
-
-        if (null != rawResult) {
-            String result = rawResult.getText();
-            Log.e("CaptureActivity", "Scan Result->" + result);
-        }
-
-        boolean fromLiveScan = barcode != null;
-        if (fromLiveScan) {
-            // Then not from history, so beep/vibrate and we have an image to draw on
-            beepManager.playBeepSoundAndVibrate();
-            drawResultPoints(barcode, scaleFactor, rawResult);
-        }
-    }
-
-    /**
-     * Superimpose a line for 1D or dots for 2D to highlight the key features of the barcode.
-     *
-     * @param barcode     A bitmap of the captured image.
-     * @param scaleFactor amount by which thumbnail was scaled
-     * @param rawResult   The decoded results which contains the points to draw.
-     */
-    private void drawResultPoints(Bitmap barcode, float scaleFactor, Result rawResult) {
-        ResultPoint[] points = rawResult.getResultPoints();
-        if (points != null && points.length > 0) {
-            Canvas canvas = new Canvas(barcode);
-            Paint paint = new Paint();
-            paint.setColor(getResources().getColor(R.color.result_points));
-            if (points.length == 2) {
-                paint.setStrokeWidth(4.0f);
-                drawLine(canvas, paint, points[0], points[1], scaleFactor);
-            } else if (points.length == 4 &&
-                    (rawResult.getBarcodeFormat() == BarcodeFormat.UPC_A ||
-                            rawResult.getBarcodeFormat() == BarcodeFormat.EAN_13)) {
-                // Hacky special case -- draw two lines, for the barcode and metadata
-                drawLine(canvas, paint, points[0], points[1], scaleFactor);
-                drawLine(canvas, paint, points[2], points[3], scaleFactor);
-            } else {
-                paint.setStrokeWidth(10.0f);
-                for (ResultPoint point : points) {
-                    if (point != null) {
-                        canvas.drawPoint(scaleFactor * point.getX(), scaleFactor * point.getY(), paint);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void drawLine(Canvas canvas, Paint paint, ResultPoint a, ResultPoint b, float scaleFactor) {
-        if (a != null && b != null) {
-            canvas.drawLine(scaleFactor * a.getX(),
-                    scaleFactor * a.getY(),
-                    scaleFactor * b.getX(),
-                    scaleFactor * b.getY(),
-                    paint);
-        }
+    private void resetStatusView() {
+        statusView.setText(R.string.msg_default_status);
+        statusView.setVisibility(View.VISIBLE);
+        viewfinderView.setVisibility(View.VISIBLE);
     }
 
     private void initCamera(SurfaceHolder surfaceHolder) {
@@ -344,6 +210,22 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
         }
     }
 
+    private void decodeOrStoreSavedBitmap(Result result) {
+        // Bitmap isn't used yet -- will be used soon
+        if (handler == null) {
+            savedResultToShow = result;
+        } else {
+            if (result != null) {
+                savedResultToShow = result;
+            }
+            if (savedResultToShow != null) {
+                Message message = Message.obtain(handler, R.id.decode_succeeded, savedResultToShow);
+                handler.sendMessage(message);
+            }
+            savedResultToShow = null;
+        }
+    }
+
     private void displayFrameworkBugMessageAndExit() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.zxing_app_name));
@@ -353,6 +235,155 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
         builder.show();
     }
 
+    @Override
+    protected void onPause() {
+        // add by stefan
+        myOrientationDetector.disable();
+        // end add
+        if (handler != null) {
+            handler.quitSynchronously();
+            handler = null;
+        }
+        if (null != inactivityTimer) {
+            inactivityTimer.onPause();
+        }
+        if (null != ambientLightManager) {
+            ambientLightManager.stop();
+        }
+        if (null != beepManager) {
+            beepManager.close();
+        }
+        if (null != cameraManager) {
+            cameraManager.closeDriver();
+        }
+        if (!hasSurface) {
+            SurfaceView surfaceView = (SurfaceView) findViewById(R.id.preview_view);
+            SurfaceHolder surfaceHolder = surfaceView.getHolder();
+            surfaceHolder.removeCallback(this);
+        }
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (null != inactivityTimer) {
+            inactivityTimer.shutdown();
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK:
+                setResult(RESULT_CANCELED);
+                finish();
+                break;
+            case KeyEvent.KEYCODE_FOCUS:
+            case KeyEvent.KEYCODE_CAMERA:
+                // Handle these events so they don't launch the Camera app
+                return true;
+            // Use volume up/down to turn on light
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+                cameraManager.setTorch(false);
+                return true;
+            case KeyEvent.KEYCODE_VOLUME_UP:
+                cameraManager.setTorch(true);
+                return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        if (holder == null) {
+            Log.e(TAG, "*** WARNING *** surfaceCreated() gave us a null surface!");
+        }
+        if (!hasSurface) {
+            hasSurface = true;
+            initCamera(holder);
+        }
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        hasSurface = false;
+    }
+
+    /**
+     * A valid barcode has been found, so give an indication of success and show the results.
+     *
+     * @param rawResult   The contents of the barcode.
+     * @param scaleFactor amount by which thumbnail was scaled
+     * @param barcode     A greyscale bitmap of the camera data which was decoded.
+     */
+    public void handleDecode(Result rawResult, Bitmap barcode, float scaleFactor) {
+        inactivityTimer.onActivity();
+
+        if (null != rawResult) {
+            String result = rawResult.getText();
+            Log.e("CaptureActivity", "Scan Result->" + result);
+        }
+
+        boolean fromLiveScan = barcode != null;
+        if (fromLiveScan) {
+            // Then not from history, so beep/vibrate and we have an image to draw on
+            beepManager.playBeepSoundAndVibrate();
+            drawResultPoints(barcode, scaleFactor, rawResult);
+            // add by stefan
+            if (null != rawResult) {
+                Intent data = new Intent();
+                data.putExtra(EXTRA_SCAN_RESULT, rawResult.getText());
+                setResult(Activity.RESULT_OK, data);
+                finish();
+            } else {
+                restartPreviewAfterDelay(500L);
+            }
+            // add end
+        }
+    }
+
+    /**
+     * Superimpose a line for 1D or dots for 2D to highlight the key features of the barcode.
+     *
+     * @param barcode     A bitmap of the captured image.
+     * @param scaleFactor amount by which thumbnail was scaled
+     * @param rawResult   The decoded results which contains the points to draw.
+     */
+    private void drawResultPoints(Bitmap barcode, float scaleFactor, Result rawResult) {
+        if (null == rawResult) {
+            return;
+        }
+        ResultPoint[] points = rawResult.getResultPoints();
+        if (points != null && points.length > 0) {
+            Canvas canvas = new Canvas(barcode);
+            Paint paint = new Paint();
+            paint.setColor(getResources().getColor(R.color.result_points));
+            if (points.length == 2) {
+                paint.setStrokeWidth(4.0f);
+                drawLine(canvas, paint, points[0], points[1], scaleFactor);
+            } else if (points.length == 4 &&
+                    (rawResult.getBarcodeFormat() == BarcodeFormat.UPC_A ||
+                            rawResult.getBarcodeFormat() == BarcodeFormat.EAN_13)) {
+                // Hacky special case -- draw two lines, for the barcode and metadata
+                drawLine(canvas, paint, points[0], points[1], scaleFactor);
+                drawLine(canvas, paint, points[2], points[3], scaleFactor);
+            } else {
+                paint.setStrokeWidth(10.0f);
+                for (ResultPoint point : points) {
+                    if (point != null) {
+                        canvas.drawPoint(scaleFactor * point.getX(), scaleFactor * point.getY(), paint);
+                    }
+                }
+            }
+        }
+    }
+
     public void restartPreviewAfterDelay(long delayMS) {
         if (handler != null) {
             handler.sendEmptyMessageDelayed(R.id.restart_preview, delayMS);
@@ -360,13 +391,62 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
         resetStatusView();
     }
 
-    private void resetStatusView() {
-        statusView.setText(R.string.msg_default_status);
-        statusView.setVisibility(View.VISIBLE);
-        viewfinderView.setVisibility(View.VISIBLE);
+    private static void drawLine(Canvas canvas, Paint paint, ResultPoint a, ResultPoint b, float scaleFactor) {
+        if (a != null && b != null) {
+            canvas.drawLine(scaleFactor * a.getX(),
+                    scaleFactor * a.getY(),
+                    scaleFactor * b.getX(),
+                    scaleFactor * b.getY(),
+                    paint);
+        }
     }
 
     public void drawViewfinder() {
         viewfinderView.drawViewfinder();
     }
+
+    // add by stefan
+    private class MyOrientationDetector extends OrientationEventListener {
+
+        private int lastOrientation = -1;
+
+        MyOrientationDetector(Context context) {
+            super(context);
+        }
+
+        void setLastOrientation(int rotation) {
+            switch (rotation) {
+                case Surface.ROTATION_90:
+                    lastOrientation = 270;
+                    break;
+                case Surface.ROTATION_270:
+                    lastOrientation = 90;
+                    break;
+                default:
+                    lastOrientation = -1;
+            }
+        }
+
+        @Override
+        public void onOrientationChanged(int orientation) {
+            Log.d(TAG, "orientation:" + orientation);
+            if (orientation > 45 && orientation < 135) {
+                orientation = 90;
+            } else if (orientation > 225 && orientation < 315) {
+                orientation = 270;
+            } else {
+                orientation = -1;
+            }
+            if ((orientation == 90 && lastOrientation == 270) || (orientation == 270 && lastOrientation == 90)) {
+                Log.i(TAG, "orientation:" + orientation + "lastOrientation:" + lastOrientation);
+                Intent intent = getIntent();
+                finish();
+                startActivity(intent);
+                lastOrientation = orientation;
+                Log.i(TAG, "success");
+            }
+        }
+    }
+    // end add
+
 }

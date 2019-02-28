@@ -7,7 +7,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import com.google.zxing.client.android.ScanActivity;
+import com.google.zxing.client.android.CaptureActivity;
 
 public class MainActivity extends Activity {
 
@@ -25,7 +25,7 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
-                intent.setClass(MainActivity.this, ScanActivity.class);
+                intent.setClass(MainActivity.this, CaptureActivity.class);
                 startActivityForResult(intent, REQUEST_CODE_SCAN);
             }
         });
@@ -36,7 +36,7 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK
                 && null != data) {
-            String code = data.getStringExtra(ScanActivity.EXTRA_SCAN_RESULT);
+            String code = data.getStringExtra(CaptureActivity.EXTRA_SCAN_RESULT);
             textSummary.setText(code);
         }
     }

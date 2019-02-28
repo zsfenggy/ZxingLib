@@ -33,6 +33,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -47,7 +48,47 @@ import java.util.List;
 public final class ViewfinderView extends View {
 
     private static final int[] SCANNER_ALPHA = {0, 64, 128, 192, 255, 192, 128, 64};
-
+    private final Paint paint;
+    /**
+     * 遮罩层颜色
+     */
+    private final int maskColor;
+    /**
+     * 扫描线风格:0x0-paint,0x1-bitmap
+     */
+    private final int laserStyle;
+    /**
+     * 扫描线颜色
+     */
+    private final int laserColor;
+    /**
+     * 结果点颜色
+     */
+    private final int resultPointColor;
+    /**
+     * 闪烁点List
+     */
+    private final List<ResultPoint> possibleResultPoints;
+    /**
+     * 上次闪烁点List
+     */
+    private final List<ResultPoint> lastPossibleResultPoints;
+    /**
+     * 四个绿色边角对应的长度
+     */
+    private final int cornerLength;
+    /**
+     * 四个绿色边角对应的厚度
+     */
+    private final int cornerThickness;
+    /**
+     * 提示文字字体大小
+     */
+    private final int tipTextSize;
+    /**
+     * 提示文字距离扫描框下面的高度
+     */
+    private final int tipTextMarginTop;
     /**
      * 刷新界面的时间
      */
@@ -68,92 +109,39 @@ public final class ViewfinderView extends View {
      * 闪烁点半径
      */
     private int possiblePointSize;
-
     private CameraManager cameraManager;
-    private final Paint paint;
-    /**
-     * 遮罩层颜色
-     */
-    private final int maskColor;
-    /**
-     * 扫描线风格:0x0-paint,0x1-bitmap
-     */
-    private final int laserStyle;
     /**
      * 扫描线样式图片
      */
     private Bitmap laserBitmap;
     /**
-     * 扫描线颜色
-     */
-    private final int laserColor;
-    /**
-     * 结果点颜色
-     */
-    private final int resultPointColor;
-    /**
      * 扫描线不透明度
      */
     private int scannerAlpha;
     /**
-     * 闪烁点List
-     */
-    private final List<ResultPoint> possibleResultPoints;
-    /**
-     * 上次闪烁点List
-     */
-    private final List<ResultPoint> lastPossibleResultPoints;
-
-    /**
-     * 四个绿色边角对应的长度
-     */
-    private final int cornerLength;
-
-    /**
-     * 四个绿色边角对应的厚度
-     */
-    private final int cornerThickness;
-
-    /**
      * 中间扫描线每次刷新移动的距离
      */
     private int scanningDistance;
-
     /**
      * 中间扫描线的最顶端位置
      */
     private int slideTop;
-
     /**
      * 中间扫描线高度
      */
     private int laserHeight;
-
     /**
      * 提示文字
      */
     private String tipText;
-
     /**
      * 提示文字透明度
      */
     private int tipTextAlpha;
-
     /**
      * 提示文字颜色
      */
     private int tipTextColor;
-
-    /**
-     * 提示文字字体大小
-     */
-    private final int tipTextSize;
-
-    /**
-     * 提示文字距离扫描框下面的高度
-     */
-    private final int tipTextPaddingTop;
-
     /**
      * 是否为第一次Draw
      */
@@ -215,9 +203,14 @@ public final class ViewfinderView extends View {
                 resources.getColor(R.color.status_text));
         tipTextSize = (int) a.getDimension(R.styleable.ViewfinderView_tipTextSize,
                 resources.getDimension(R.dimen.tip_text_size));
-        tipTextPaddingTop = (int) a.getDimension(R.styleable.ViewfinderView_tipTextSize,
-                resources.getDimension(R.dimen.tip_text_padding_top));
+        tipTextMarginTop = dp2px(context, a.getDimensionPixelSize(R.styleable.ViewfinderView_tipTextMarginTop,
+                resources.getDimensionPixelSize(R.dimen.tip_text_margin_top)));
         a.recycle();
+    }
+
+    private int dp2px(Context context, int dpValue) {
+        return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dpValue,
+                context.getResources().getDisplayMetrics());
     }
 
     public void setCameraManager(CameraManager cameraManager) {
@@ -235,8 +228,8 @@ public final class ViewfinderView extends View {
         if (frame == null || previewFrame == null) {
             return;
         }
-        int width = canvas.getWidth();
-        int height = canvas.getHeight();
+        int width = getWidth();
+        int height = getHeight();
 
         // 初始化中间线滑动的最上边和最下边
         if (isFirstDraw) {
@@ -297,9 +290,11 @@ public final class ViewfinderView extends View {
         paint.setTypeface(Typeface.DEFAULT);
         // paint.setTypeface(Typeface.create("System", Typeface.BOLD));
         float tip_text_width = paint.measureText(tipText);
-        canvas.drawText(tipText, frame.left + (frame.width() - tip_text_width) / 2,
-                (float) (frame.bottom + tipTextPaddingTop), paint);
+        float tip_text_x = frame.left + (frame.width() - tip_text_width) / 2;
+        float tip_text_y = (float) (frame.bottom + tipTextMarginTop);
+        canvas.drawText(tipText, tip_text_x, tip_text_y, paint);
 
+        // draw possible result points
         float scaleX = frame.width() / (float) previewFrame.width();
         float scaleY = frame.height() / (float) previewFrame.height();
         int frameLeft = frame.left;

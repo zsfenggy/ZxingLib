@@ -13,7 +13,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  -->
-<merge xmlns:android="http://schemas.android.com/apk/res/android">
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <SurfaceView
         android:id="@+id/preview_view"
@@ -28,7 +29,8 @@
             android:id="@+id/viewfinder_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true" />
+            android:layout_centerInParent="true"
+            app:laserStyle="bitmap" />
 
         <TextView
             android:id="@+id/status_view"
@@ -39,7 +41,8 @@
             android:background="@color/transparent"
             android:gravity="center"
             android:text="@string/msg_default_status"
-            android:textColor="@color/status_text" />
+            android:textColor="@color/status_text"
+            android:textSize="@dimen/tip_text_size" />
     </RelativeLayout>
 
 </merge>
