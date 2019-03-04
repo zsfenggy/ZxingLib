@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 28
 
     defaultConfig {
-        applicationId "com.google.zxing.client.android"
+        applicationId "me.stefan.tech"
         minSdkVersion 19
         targetSdkVersion 28
         versionCode 1
@@ -21,4 +21,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation project(':BarCodeLib')
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:cardview-v7:28.0.0'
 }
