@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">条码扫描库</string>
     <string name="scan">扫描</string>
+    <string name="generate_qr_code">生成二维码</string>
 </resources>

@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="@string/long_click_to_share"
-        android:textAppearance="@android:style/TextAppearance.Small"
+        android:textAppearance="@android:style/TextAppearance.Medium"
         android:textColor="@color/contents_text" />
 
     <ImageView
@@ -52,10 +52,10 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:gravity="center"
-            android:paddingBottom="@dimen/standard_padding"
             android:paddingLeft="@dimen/standard_padding"
             android:paddingRight="@dimen/standard_padding"
-            android:textAppearance="@android:style/TextAppearance.Small"
+            android:paddingBottom="@dimen/standard_padding"
+            android:textAppearance="@android:style/TextAppearance.Medium"
             android:textColor="@color/contents_text"
             android:textIsSelectable="true" />
     </ScrollView>
