@@ -27,5 +27,5 @@
     <string name="msg_encode_contents_failed">Could not encode a barcode from the data provided.</string>
     <string name="msg_invalid_value">Invalid value</string>
     <string name="msg_unmount_usb">Sorry, the SD card is not accessible.</string>
-    <string name="long_click_to_share">Tip:long_click_to_share</string>
+    <string name="long_click_to_share">Tip:long click to share</string>
 </resources>

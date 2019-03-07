@@ -57,7 +57,10 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK
                 && null != data) {
             String code = data.getStringExtra(CaptureActivity.EXTRA_SCAN_RESULT);
-            etSummary.setText(code);
+            if (null != code) {
+                etSummary.setText(code);
+                etSummary.setSelection(code.length());
+            }
         }
     }
 

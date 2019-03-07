@@ -24,6 +24,7 @@ import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
@@ -32,6 +33,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.zxing.WriterException;
+import com.google.zxing.client.android.BuildConfig;
 import com.google.zxing.client.android.FinishListener;
 import com.google.zxing.client.android.R;
 import com.google.zxing.client.android.util.Intents;
@@ -136,11 +138,13 @@ public final class EncodeActivity extends Activity {
             }
         }
 
-        Intent intent = new Intent(Intent.ACTION_SEND, Uri.parse("mailto:"));
+        Intent intent = new Intent(Intent.ACTION_SEND);
         intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.zxing_app_name) + " - " + encoder.getTitle());
         intent.putExtra(Intent.EXTRA_TEXT, contents);
-        intent.putExtra(Intent.EXTRA_STREAM, Uri.parse("file://" + barcodeFile.getAbsolutePath()));
-        intent.setType("image/png");
+        Uri uri = FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider",
+                barcodeFile);
+        intent.putExtra(Intent.EXTRA_STREAM, uri);
+        intent.setDataAndType(Uri.parse("mailto:"), "image/png");
         startActivity(Intent.createChooser(intent, null));
     }
 
