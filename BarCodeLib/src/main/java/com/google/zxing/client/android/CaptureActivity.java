@@ -47,7 +47,10 @@ import com.google.zxing.client.android.camera.FrontLightMode;
 import com.google.zxing.client.android.util.AmbientLightManager;
 import com.google.zxing.client.android.util.BeepManager;
 import com.google.zxing.client.android.util.InactivityTimer;
+import com.google.zxing.client.android.util.Intents;
 import com.google.zxing.client.android.view.ViewfinderView;
+import com.gyf.immersionbar.BarHide;
+import com.gyf.immersionbar.ImmersionBar;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -96,6 +99,18 @@ public class CaptureActivity extends Activity implements SurfaceHolder.Callback 
 
         Window window = getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        // 将activity设置为全屏显示
+        Intent intent = getIntent();
+        if (null != intent && intent.hasExtra(Intents.EXTRA_IS_FULL_SCREEN) &&
+                intent.getBooleanExtra(Intents.EXTRA_IS_FULL_SCREEN, false)) {
+            requestWindowFeature(Window.FEATURE_NO_TITLE);
+            // 隐藏屏幕底部虚拟按钮
+            ImmersionBar.with(this).hideBar(BarHide.FLAG_HIDE_NAVIGATION_BAR).init();
+            window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+//        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        }
         setContentView(R.layout.capture);
 
         hasSurface = false;

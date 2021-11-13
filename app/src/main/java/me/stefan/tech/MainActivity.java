@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
+                intent.putExtra(Intents.EXTRA_IS_FULL_SCREEN, true);
                 intent.setClass(MainActivity.this, CaptureActivity.class);
                 startActivityForResult(intent, REQUEST_CODE_SCAN);
             }

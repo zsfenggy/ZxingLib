@@ -129,4 +129,9 @@ public final class Intents {
         }
     }
 
+    /**
+     * 是否全屏
+     */
+    public static final String EXTRA_IS_FULL_SCREEN = "is_full_screen";
+
 }
